@@ -52,7 +52,7 @@ func Auth(sm *session.SessionsManager, next http.Handler) http.Handler {
 		}
 		sess, err := sm.Check(r)
 		if err != nil {
-			sm.Logger.Errorf("Auth error %e", err)
+			sm.Logger.Errorf("Auth error: %v", err)
 			helpers.WriteBadRequest(w, "Auth error")
 			return
 		}

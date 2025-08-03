@@ -67,7 +67,7 @@ func (h *PostHandler) getCommentWithUser(comment comment.Comment) (*CommentWithU
 	commentWithUser := CommentWithUser{Comment: comment}
 	user, err := h.UserRepo.GetUserById(comment.UserId)
 	if err != nil {
-		return nil, fmt.Errorf("could not find user %e", err)
+		return nil, fmt.Errorf("could not find user %w", err)
 	}
 	commentWithUser.Author = *user
 	return &commentWithUser, nil
@@ -116,9 +116,12 @@ func (h *PostHandler) getPostWithCommentsAndVotesById(postId string) (*PostWithC
 		}
 		return false, nil
 	})
-	if err != nil || len(posts) != 1 {
+	if err != nil {
 		h.Logger.Error(err)
 		return nil, err
+	}
+	if len(posts) != 1 {
+		return nil, fmt.Errorf("post not found with id: %s", postId)
 	}
 	postWithCommentsAndVotes, err := h.getPostWithCommentsAndVotes(posts[0])
 	if err != nil {
@@ -191,24 +194,24 @@ func (h *PostHandler) CreatePost(w http.ResponseWriter, r *http.Request) {
 	userId := sess.UserId
 	post, err := h.PostRepo.CreatePost(request.Type, request.Title, request.Category, request.Text, request.Url, userId)
 	if err != nil {
-		helpers.WriteBadRequest(w, "failed to crete post")
+		helpers.WriteBadRequest(w, "failed to create post")
 		h.Logger.Error(err)
 		return
 	}
 	_, err = h.VotesRepo.CreateVote(post.Id, userId, 1)
 	if err != nil {
-		helpers.WriteBadRequest(w, "failed to crete vote")
-		h.Logger.Error(err)
-		return
+		// Log the error but continue - the post was created successfully
+		h.Logger.Errorf("failed to create initial vote for post %s: %v", post.Id, err)
 	}
 
 	postWithCommentsAndVotes, err := h.getPostWithCommentsAndVotes(*post)
 	if err != nil {
-		helpers.WriteBadRequest(w, "failed to crete post")
+		helpers.WriteBadRequest(w, "failed to get post details")
 		h.Logger.Error(err)
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	bin, _ := json.Marshal(postWithCommentsAndVotes)
 	w.Write(bin)
@@ -223,7 +226,6 @@ func (h *PostHandler) GetPostInfo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
 	bin, _ := json.Marshal(postWithCommentsAndVotes)
 	w.Write(bin)
 }
@@ -251,6 +253,12 @@ func (h *PostHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.CommentsRepo.CreateComment(postId, sess.UserId, request.Comment)
+	err = h.CommentsRepo.CreateComment(postId, sess.UserId, request.Comment)
+	if err != nil {
+		helpers.WriteBadRequest(w, "failed to create comment")
+		h.Logger.Error(err)
+		return
+	}
 
 	postWithCommentsAndVotes, err := h.getPostWithCommentsAndVotesById(postId)
 	if err != nil {

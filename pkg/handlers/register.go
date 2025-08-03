@@ -66,7 +66,7 @@ func (h *RegisterHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	users, err := h.UserRepo.GetUsers(func(u *user.User) (bool, error) {
-		if u.Password == request.Password && u.Username == u.Password {
+		if u.Password == request.Password && u.Username == request.Username {
 			return true, nil
 		}
 		return false, nil
@@ -77,7 +77,7 @@ func (h *RegisterHandler) LoginPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(users) != 1 {
-		h.Logger.Error("Cold not find user %e", err)
+		h.Logger.Error("Could not find user")
 		helpers.WriteBadRequest(w, "failed to find user")
 		return
 	}

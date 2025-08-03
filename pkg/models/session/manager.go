@@ -39,7 +39,7 @@ func (sm *SessionsManager) Check(r *http.Request) (*Session, error) {
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("error on token parse: %e", err)
+		return nil, fmt.Errorf("error on token parse: %w", err)
 	}
 
 	sm.mu.RLock()

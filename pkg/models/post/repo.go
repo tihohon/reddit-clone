@@ -59,15 +59,15 @@ func (memory *PostMemory) CreatePost(postType string, title string, category str
 }
 
 func (memory *PostMemory) DeletePost(postId string) error {
+	memory.mutex.Lock()
 	_, ok := memory.posts[postId]
 	if !ok {
+		memory.mutex.Unlock()
 		return &models.NotFoundError{}
 	}
-	memory.mutex.Lock()
 	delete(memory.posts, postId)
 	memory.mutex.Unlock()
 	return nil
-
 }
 
 func NewPostMemory() *PostMemory {

@@ -49,18 +49,17 @@ func (memory *VoteMemory) CreateVote(postId string, userId string, voteVal int) 
 
 func (memory *VoteMemory) WithdrawVote(postId string, userId string) error {
 	voteId := fmt.Sprintf("%v_%v", postId, userId)
-	memory.mutex.RLock()
-	vote, ok := memory.Votes[voteId]
-	memory.mutex.RUnlock()
-	if !ok || vote.User != userId {
-		return &models.NotFoundError{}
-	}
 
 	memory.mutex.Lock()
+	vote, ok := memory.Votes[voteId]
+	if !ok || vote.User != userId {
+		memory.mutex.Unlock()
+		return &models.NotFoundError{}
+	}
 	delete(memory.Votes, voteId)
 	memory.mutex.Unlock()
-	return nil
 
+	return nil
 }
 
 func NewVoteMemory() *VoteMemory {

@@ -18,10 +18,9 @@ func (memory *UserMemory) GetUserById(id string) (*User, error) {
 	user, ok := memory.Users[id]
 	memory.mutex.RUnlock()
 	if !ok {
-		return nil, fmt.Errorf("error on retrieving user: %e", models.NotFoundError{})
+		return nil, &models.NotFoundError{}
 	}
 	return &user, nil
-
 }
 
 func (memory *UserMemory) CreateUser(username string, password string) (userId string, err error) {
@@ -46,19 +45,18 @@ func (memory *UserMemory) GetUsers(filterFunc func(*User) (bool, error)) ([]User
 	result := []User{}
 
 	memory.mutex.RLock()
-	for _, post := range memory.Users {
-		add, err := filterFunc(&post)
+	for _, user := range memory.Users {
+		add, err := filterFunc(&user)
 		if err != nil {
-			return nil, fmt.Errorf("failed on filter users: %e", err)
+			memory.mutex.RUnlock()
+			return nil, fmt.Errorf("failed on filter users: %w", err)
 		}
 		if add {
-			result = append(result, post)
+			result = append(result, user)
 		}
-
 	}
 	memory.mutex.RUnlock()
 	return result, nil
-
 }
 
 func NewUserMemory() *UserMemory {
