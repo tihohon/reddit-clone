@@ -17,3 +17,9 @@ type SignError struct{}
 func (m *SignError) Error() string {
 	return "failed do sign data"
 }
+
+type InvalidValueError struct{}
+
+func (m *InvalidValueError) Error() string {
+	return "invalid value"
+}

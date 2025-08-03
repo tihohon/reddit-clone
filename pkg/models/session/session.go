@@ -20,9 +20,12 @@ var SessionKey sessKey = "sessionKey"
 func NewSession(userId string, username string, key string) (*Session, error) {
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"user_id":  userId,
-		"username": username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		"user": map[string]interface{}{
+			"id":       userId,
+			"username": username,
+		},
+		"exp": time.Now().Add(time.Hour * 24).Unix(),
+		"iat": time.Now().Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(key))

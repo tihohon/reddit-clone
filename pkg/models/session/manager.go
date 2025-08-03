@@ -35,11 +35,11 @@ func (sm *SessionsManager) Check(r *http.Request) (*Session, error) {
 	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
 
 	_, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
-		return sm.secretKey, nil
+		return []byte(sm.secretKey), nil
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("error on token parse: %w", err)
+		return nil, fmt.Errorf("error on token parse: %e", err)
 	}
 
 	sm.mu.RLock()
